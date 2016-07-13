@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dell DJ</title>
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- <script src="js/tuna.js"></script> -->
+  <script src="js/google-analytics-bundle.js"></script> 
+  <script src="js/jquery/jquery-2.1.4.min.js"></script>
+  <script src="js/id3/id3-minimized.js"></script>
+  <script src="js/dell.led.js"></script>
+  <script src="js/eventdispatcher.js"></script>
+  <script src="js/filesystem.js"></script>
+  <script src="js/timer.js"></script>
+  <script src="js/gamepad.js"></script>
+  <script src="js/xbox.js"></script>
+  <script src="js/volume-meter.js"></script>
+  <!--<script src="js/bluetooth.js"></script>-->
+  <script src="js/audiodisplay.js"></script>
+  <script src="js/track.js"></script>
+  <script src="js/sample.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/id3/id3-writer.min.js"></script>
+  <script src="js/mapping.js"></script>
+
+  <script src="js/recorder.js"></script>
+  <!-- <script src="js/webaudiorecorder/WebAudioRecorder.min.js"></script>-->
+  <!-- <script src="js/pitch/fft.js"></script> -->
+  <!-- <script src="js/pitch/pitch.js"></script> -->
+  <script src="js/xmllint.js"></script>
+  <script src="js/dsp.js"></script>
+  <script src="js/frequency-analyzer.js"></script>
+</head>
+
+<body>
+  <div id="header">
+    <h1>Dell DJ</h1>
+    <div id="close" class='header-btn close-btn'></div>
+  </div>
+  
+  <div id="interface" class="row">
+    <div id="rhythm" class="col-12">
+      <canvas id="left-bar" width="1366" height="100" class="rhythm"></canvas>
+      <canvas id="right-bar" width="1366" height="100" class="rhythm"></canvas>
+    </div>
+    <div class='col-1'></div>
+    
+    <div id="left-deck" value="left" class='deck drop col-3 back-2'>
+      <div id='song-info'>
+        <div id='title' class='song-info'></div>
+        <div id='artist' class='song-info'></div>
+        <div id='bpm' class='song-info'></div>
+      </div>
+      <canvas width="1080" height="100" class="progress"></canvas>
+      <input id="left-pitch" data-content='+0.00' basic label type="range" rotated defaultvalue="1" min="0.92" step="0.001" max="1.08">
+      <canvas width="200" height="200" class='platter' value="left"></canvas>
+      <div class='extra-group'>
+        <span class='extra-label bpm-label'></span>
+        <span class='extra-btn square-label range-label'>&plusmn;8</span>
+        <span class='extra-label square-label key-label'></span>
+        <span class='extra-label square-label pitchkey-label' hidden></span>
+      </div>
+      <div class='buttons-group'>
+        <input type='checkbox' blue class="cue-button disabled">
+        <input type='checkbox' blue class="pause-button disabled">
+        <input type='checkbox' blue class="play-button disabled">
+        <input type='checkbox' blue class="sync-button disabled">
+      </div>
+    </div>
+    
+    <div id='mixer'>
+      <div id='mix-menu' class='col-12 row-2'>
+        <div class='col-12 row-6' style='border-bottom:1px solid black;'>
+          <h1>Mixer</h1>
+        </div>
+        <div class='col-12 row-6'>
+          <span class='col-3 mix-menu-btn'></span>
+          <span class='col-3 mix-menu-btn'></span>
+          <span class='col-3 mix-menu-btn'></span>
+          <span class='col-3 mix-menu-btn'></span>
+        </div>
+      </div>
+      <div class='row-10 back-1'>
+        <div id='left' class='col-3 row-12'>
+          <canvas id="left-high" class='knob' sensitivity='4' min='-1' max='1'></canvas>
+          <div id='high-label' class='label'>HIGH</div>
+          <canvas id="left-mid" class='knob' sensitivity='4' min='-1' max='1'></canvas>
+          <div id='mid-label' class='label'>MID</div>
+          <canvas id="left-low" class='knob' sensitivity='4' min='-1' max='1'></canvas>
+          <div id='low-label' class='label'>LOW</div>
+          <canvas id="left-filter" class='knob' sensitivity='4' min='-1' max='1'></canvas>
+          <div id='filter-label' class='label'>FILTER</div>
+        </div>
+        <div id="inner" class='col-6 row-12'>
+          <div id="inner-top" class='col-12 row-8'>
+            <div class='col-3 row-12'>
+              <div class='col-12 row-2'></div>
+              <div class='col-12 row-8'>
+                <input id="left-gain" blue type="range" rotated defaultvalue="1" min="0" step="0.008" max="1">
+              </div>
+              <div class='col-12 row-2'></div>
+            </div>
+            <div class='col-6 row-12 flex-row' style="padding:5px 2px;">
+              <canvas width="120" height="180" class="vu-meter vu-left"></canvas>
+              <canvas width="120" height="180" class="vu-meter vu-right"></canvas>
+              <!--<canvas width="120" height="180" class="vu-meter vu-master"></canvas>-->
+            </div>
+            <div class='col-3 row-12'>
+              <div class='col-12 row-2'></div>
+              <div class='col-12 row-8'>
+                <input id="right-gain" red type="range" rotated defaultvalue="1" min="0" step="0.008" max="1">
+              </div>
+              <div class='col-12 row-2'></div>
+            </div>
+          </div>
+          <div class='col-12 row-4' style='display:flex;'>
+            <div class='fader-container'>
+              <input id="crossfader" type='range' defaultvalue='0' min='-1' step='0.01' max='1'>
+            </div>
+          </div>
+        </div>
+        <div id='right' class='col-3 row-12'>
+          <canvas id="right-high" class='knob' sensitivity='4' min='-1' max='1'></canvas>
+          <div id='high-label' class='label'>HIGH</div>
+          <canvas id="right-mid" class='knob' sensitivity='4' min='-1' max='1'></canvas>
+          <div id='mid-label' class='label'>MID</div>
+          <canvas id="right-low" class='knob' sensitivity='4' min='-1' max='1'></canvas> 
+          <div id='low-label' class='label'>LOW</div>
+          <canvas id="right-filter" class='knob' sensitivity='4' min='-1' max='1'></canvas>
+          <div id='filter-label' class='label'>FILTER</div>
+        </div>
+        </div>
+      </div>
+      
+      <div id="right-deck" value="right" class='deck drop col-3 back-2'>
+        <div id='song-info'>
+          <div id='title' class='song-info'></div>
+          <div id='artist' class='song-info'></div>
+          <div id='bpm' class='song-info'></div>
+        </div>
+        <canvas width="1080" height="100" class="progress"></canvas>
+        <input id="right-pitch" data-content='+0.00' basic label type="range" rotated defaultvalue="1" min="0.92" step="0.001" max="1.08">
+        <canvas width="200" height="200" class="platter" value="right"></canvas>
+  
+        <div class='extra-group'>
+          <span class='extra-label bpm-label'></span>
+          <span class='extra-label square-label key-label'></span>
+          <span class='extra-btn square-label range-label'>&plusmn;8</span>
+          <span class='extra-label square-label pitchkey-label' hidden></span>
+        </div>
+
+      <div class='buttons-group'>
+        <input type='checkbox' red class="cue-button disabled">
+        <input type='checkbox' red class="pause-button disabled">
+        <input type='checkbox' red class="play-button disabled">
+        <input type='checkbox' red class="sync-button disabled">
+      </div>
+    </div>
+
+    <div class='col-1'></div>
+    <div id="bottom">
+      <div id='left-extras' class="extras" active='samples'>
+        <img src='assets/images/eq.svg' class='head-img'>
+        <h1>Hot Cues</h1>
+        <img src='assets/images/left_arrow.svg' class='left-btn'>
+        <img src='assets/images/right_arrow.svg' class='right-btn'>
+        <div id='left-hotcue' header='Hot Cues' class='menu' style='display:none;'>
+          <input type='checkbox' index='1' class='cue-btn'>
+          <input type='checkbox' index='2' class='cue-btn'>
+          <input type='checkbox' index='3' class='cue-btn'>
+          <input type='checkbox' index='4' class='cue-btn'>
+          <input type='checkbox' index='5' class='cue-btn'>
+          <input type='checkbox' index='6' class='cue-btn'>
+        </div>
+        <div id='left-effects' header='Effects' class='menu' style='display:none;'>
+          <div></div>
+        </div>
+        <div id='left-loops' header='Loops' class='menu' style='display:none;'>
+          <div class='loop-group'>
+            <span blue class='span-btn manual-loop' index='1'>IN</span>
+            <span blue class='span-btn manual-loop' index='2'>OUT</span>
+            <span blue class='span-btn manual-loop' index='3'>RELOOP</span>
+            <span blue class='span-btn manual-loop' index='4'>2x</span>
+            <span blue class='span-btn manual-loop' index='5'>1/2</span>
+          </div>
+          <div class='loop-group'>
+            <span blue class='span-btn auto-loop' index='1'>1</span>
+            <span blue class='span-btn auto-loop' index='2'>2</span>
+            <span blue class='span-btn auto-loop' index='3'>4</span>
+            <span blue class='span-btn auto-loop' index='4'>8</span>
+          </div>
+        </div>
+        <div id='left-samples' header='Samples' class='menu back-1' style='display:none;'>
+          <div id='sample-1' class='sample drop' value='sample-1'>
+            <input type="checkbox" blue class="play-button">
+            <input type="checkbox" blue class="loop-button">
+            <canvas class='gain knob' stem sensitivity='8' min='0' max='1'></canvas>
+            <canvas class='progress' width="540" height="60"></canvas>
+            <span class='sample-label drop' value='sample-1'></span>
+          </div>
+          <div id='sample-2' class='sample drop' value='sample-2'>
+            <input type="checkbox" blue class="play-button">
+            <input type="checkbox" blue class="loop-button">
+            <canvas class='gain knob' stem sensitivity='8' min='0' max='1'></canvas>
+            <canvas class='progress' width="540" height="60"></canvas>
+            <span class='sample-label drop' value='sample-2'></span>
+          </div>
+          <div id='sample-3' class='sample drop' value='sample-3'>
+            <input type="checkbox" blue class="play-button">
+            <input type="checkbox" blue class="loop-button">
+            <canvas class='gain knob' stem sensitivity='8' min='0' max='1'></canvas>
+            <canvas class='progress' width="540" height="60"></canvas>
+            <span class='sample-label drop' value='sample-3'></span>
+          </div>
+          <div id='sample-4' class='sample drop' value='sample-4'>
+            <input type="checkbox" blue class="play-button">
+            <input type="checkbox" blue class="loop-button">
+            <canvas class='gain knob' stem sensitivity='8' min='0' max='1'></canvas>
+            <canvas class='progress' width="540" height="60"></canvas>
+            <span class='sample-label drop' value='sample-4'></span>
+          </div>
+        </div>
+      </div>
+      
+      <div id="directory">
+        <div class='dir-head-top'>
+          <img src='assets/images/folder.svg' class='head-img'>
+          <h1>Directory</h1>
+          <span class='search-box'>
+            <img src='assets/images/search.svg'>
+            <input type="text">
+          </span>
+        </div>
+        <div id='dir-inner'>
+          <div class='col-12 dir-top' style='height:32.5%'>
+            <div class='col-3 row-12'>
+              
+            </div>
+            <div class='col-6 row-12'>
+              <img src="assets/images/mp3.svg" class='dir-img'>
+              <img src="assets/images/mp3.svg" class='dir-img'>
+              <img src="assets/images/mp3.svg" class='dir-img'>
+            </div>
+            <div class='col-3 row-12'>
+              
+            </div>
+          </div>
+          <table id='dir-header'>
+            <tr>
+              <th class='num-header sortable'>#</th>
+              <th class='key-header sortable'>Key</th>
+              <th class='song-header sortable'>Song</th>
+              <th class='artist-header'>Artist</th>
+              <th class='bpm-header'>BPM</th>
+              <th class='length-header'>Length</th>
+            </tr>
+          </table>
+          <div id='dir-scroll'>
+          <table id='dir-table'></table>
+          </div>
+        </div>
+      </div>
+      
+      <div id='right-extras' class="extras" active="samples">
+        <img src='assets/images/eq.svg' class='head-img'>
+        <h1>Hot Cues</h1>
+        <img src='assets/images/left_arrow.svg' class='left-btn'>
+        <img src='assets/images/right_arrow.svg' class='right-btn'>
+        <div id='right-hotcue' header='Hot Cues' class='menu' style='display:none;'>
+          <input type='checkbox' index='1' class='extra-btn cue-btn'>
+          <input type='checkbox' index='2' class='extra-btn cue-btn'>
+          <input type='checkbox' index='3' class='extra-btn cue-btn'>
+          <input type='checkbox' index='4' class='extra-btn cue-btn'>
+          <input type='checkbox' index='5' class='extra-btn cue-btn'>
+          <input type='checkbox' index='6' class='extra-btn cue-btn'>
+        </div>        
+        <div id='right-effects' header='Effects' class='menu' style='display:none;'>
+          <div></div>
+        </div>
+        <div id='right-loops' header='Loops' class='menu' style='display:none;'>
+         <div class='loop-group'>
+            <span red class='span-btn manual-loop' index='1'>IN</span>
+            <span red class='span-btn manual-loop' index='2'>OUT</span>
+            <span red class='span-btn manual-loop' index='3'>RELOOP</span>
+            <span red class='span-btn manual-loop' index='4'>2x</span>
+            <span red class='span-btn manual-loop' index='5'>1/2</span>
+          </div>
+          <div class='loop-group'>
+            <span red class='span-btn auto-loop' index='1'>1</span>
+            <span red class='span-btn auto-loop' index='2'>2</span>
+            <span red class='span-btn auto-loop' index='3'>4</span>
+            <span red class='span-btn auto-loop' index='4'>8</span>
+          </div>
+        </div>
+        <div id='right-samples' header='Samples' class='menu back-1' style='display:none;'>
+          <div id='sample-5' class='sample drop' value='sample-5'>
+            <input type="checkbox" red class="play-button">
+            <input type="checkbox" red class="loop-button">
+            <canvas class='gain knob' stem sensitivity='8' min='0' max='1'></canvas>
+            <canvas class='progress' width="540" height="60"></canvas>
+            <span class='sample-label drop' value='sample-5'></span>
+          </div>
+          <div id='sample-6' class='sample drop' value='sample-6'>
+            <input type="checkbox" red class="play-button">
+            <input type="checkbox" red class="loop-button">
+            <canvas class='gain knob' stem sensitivity='8' min='0' max='1'></canvas>
+            <canvas class='progress' width="540" height="60"></canvas>
+            <span class='sample-label drop' value='sample-6'></span>
+          </div>
+          <div id='sample-7' class='sample drop' value='sample-7'>
+            <input type="checkbox" red class="play-button">
+            <input type="checkbox" red class="loop-button">
+            <canvas class='gain knob' stem sensitivity='8' min='0' max='1'></canvas>
+            <canvas class='progress' width="540" height="60"></canvas>
+            <span class='sample-label drop' value='sample-7'></span>
+          </div>
+          <div id='sample-8' class='sample drop' value='sample-8'>
+            <input type="checkbox" red class="play-button">
+            <input type="checkbox" red class="loop-button">
+            <canvas class='gain knob' stem sensitivity='8' min='0' max='1'></canvas>
+            <canvas class='progress' width="540" height="60"></canvas>
+            <span class='sample-label drop' value='sample-8'></span>
+          </div>
+        </div>        
+      </div>
+    </div>
+    
+    <div id="options" class="menu" style="display:none;">
+      <div class="tab-panels" tab="1">
+          <span index="1" class="tab-panel">Settings</span>
+          <span index="2" class="tab-panel">Mappers</span>
+          <span index="3" class="tab-panel">Devices</span>
+          <span index="4" class="tab-panel">Info</span>
+          <span class="close-btn"></span>
+      </div>
+      <div class='tabs'>
+        <div index="1" class="tab" style="display:none;">
+          <div class="col-4 row-12">
+            <div class="col-12 row-2 padded">
+              <h1 class="tab-header">Visual</h1>
+            </div>
+            <div class="col-12 row-10 padded">
+              <div name='DECK_SPIN' class='settings-btn'>Vinyl Spin</div>
+              <div name='DECK_TIME' class='settings-btn'>Vinyl Trim</div>
+              <div name='TIME_DISPLAY' class='settings-btn'>Time Display</div>
+              <div name='VISUALIZER' class='settings-btn'>Visualizer</div>
+              <div name='COLOR_WAVEFORM' class='settings-btn'>Colored Waveforms</div>
+            </div>
+          </div>
+          <div class="col-4 row-12"></div>
+          <div class="col-4 row-12">
+            <div class="col-12 row-2 padded">
+              <h1 class="tab-header">Performance</h1>
+            </div>
+            <div class="col-12 row-10 padded">
+              <div name='MIDI_ENABLED' class='settings-btn'>MIDI Enabled</div>
+              <div name='LINEAR_CROSSFADE' class='settings-btn'>Linear Crossfader</div>
+            </div>
+          </div>
+        </div>
+        <div index="2" class="tab" style="display:none;">
+          <div class="col-6 row-12">
+            <select class="device-menu dropdown">
+              <option value="Keyboard" selected>Keyboard</option>
+              <option value="Gamepad">Gamepad</option>
+              <option value="Generic MIDI">Generic MIDI</option>
+              <option value="MixTrack Pro 3">MixTrack Pro 3</option>
+            </select>
+
+            <table class='device-mapper-header'>
+              <tr>
+                <th>Key</th>
+                <th>Action</th>
+              </tr>
+              <tr></tr>
+            </table>
+            <div class='scroll-table'>
+            <table class='device-mapper'>
+            </table>
+            </div>
+          </div>
+          <div class="col-6 row-12">
+            <div class="col-12 row-2">
+              
+            </div>
+            <div class="col-12 row-5">
+              
+            </div>
+            <div class="col-12 row-5">
+              
+            </div>
+          </div>
+        </div>
+        <div index="3" class="tab" style="display:none; padding:0px !important;">
+          <span class="banner">Under Development</span>
+        </div>
+        <div index="4" class="tab" style="display:none;">
+          <div class="col-4 row-12">
+            <div class="col-12 row-2 padded"><h1 class="tab-header">Features</h1></div>
+            <div class="col-12 row-10 flex-col padded">
+              <ul class="info-body" style="padding-left:10%; margin:0px; text-indent:2px;">
+                <li>MIDI Support</li>
+                <!--<li>Custom MIDI Mapping</li>-->
+                <li>Samples</li>
+                <li>ID3 Tagging</li>
+                <li>Camelot Scale Detection</li>
+                <li>Album Art Detection</li>
+                <li>BPM Detection</li>
+
+              </ul>
+            </div>
+          </div>
+          <div class="col-4 row-12">
+            <div class="col-12 row-2 padded"><h1 class="tab-header">About</h1></div>
+            <div class="col-12 row-10 padded">
+              <span class="info-body">
+                <span id="app-desc">Dell DJ is a MIDI compatible DJ app with cues, samples, loops, and more! Designed for chromebooks.</span>
+                <br><br>
+                <span></span>
+              </span>
+            </div>
+          </div>
+          <div class="col-4 row-12" style="display:none;">
+            <div class="col-12 row-2 padded"><h1 class="tab-header">Future Plans</h1></div>
+            <div class="col-12 row-10 padded">
+              <ul class="info-body">
+                <li>Recording</li>
+                <li>Controls Help Menu</li>
+                <li>MIDI Mapping Menu</li>
+                <li>Support for Audio Interfaces in MIDI Controllers</li>
+              </ul>              
+            </div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id='footer'>
+    <div class='system-msg' type=''>
+      <img hidden>
+      <span></span>
+    </div>
+  </div>
+  <script src="js/midi/midi-object.js"></script>
+  <script charset="UTF-8" src="dj.js"></script>
+  <script charset="UTF-8" src="main.js"></script>
+  <script src="js/midi/midi-old.js"></script>
+ 
+</body>
+</html>
